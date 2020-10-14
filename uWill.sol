@@ -21,7 +21,7 @@ contract uWill is Ownable {
 
     event WillExecuted();
     event ShareCollected(address heir);
-    event Ping();
+    event Ping(uint pingCount);
 
     constructor(address[] memory _heirs, uint8 _interval) public {
         unlocked = false;
@@ -70,22 +70,22 @@ contract uWill is Ownable {
     }
 
     //called by script at intervals
-    function ping() private {
+    function ping() public onlyOwner (){
         pingCount.add(1);
-        emit Ping();
+        emit Ping(pingCount);
     }
 
-    function getInterval() public onlyOwner returns (uint8) {
-        return interval;
-    }
+    // function getInterval() public onlyOwner returns (uint8) {
+    //     return interval;
+    // }
 
     //if called, signifies owner's life
     function resetPing() public onlyOwner {
         pingCount = 0;
     }
 
-    function unlockFunds() private {
-        require(pingCount == 5); //if 3 month interval then 15 months and no ping reset
+    function unlockFunds() public onlyOwner {
+        require(pingCount == 4); //if 3 month interval then 15 months and no ping reset
         unlocked = true;
         emit WillExecuted();
     }

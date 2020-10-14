@@ -20,9 +20,9 @@ interface uWillInterface {
     /**
      * @dev Adds 1 to ping uint every 3 months
      */
-    function ping() external;
+    function ping() external returns(uint8);
 
-    function getInterval() external returns (uint8);
+    // function getInterval() external returns (uint8);
     
     /**
      * @dev resets uint ping to 0;
