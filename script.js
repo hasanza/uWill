@@ -8,7 +8,7 @@ const config = {
   //url of the api gateway we are using to deploy to Ethereum
   apiPrefix: "https://beta-api.ethvigil.com/v0.1/contract/",
   //our secret key that acts like a license key to use the api gateway service
-  apiKey: "f99ff89f-3430-4c10-8686-648c1ff102a2",
+  apiKey: "",
   //address of the uWill contract
   uWillContractAddress: "",
   //websocket sercure url: This is so we can open a connection to EV from our listener
