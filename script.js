@@ -8,7 +8,7 @@ const config = {
   //url of the api gateway we are using to deploy to Ethereum
   apiPrefix: "https://beta-api.ethvigil.com/v0.1/contract/",
   //our secret key that acts like a license key to use the api gateway service
-  apiKey: "f99ff89f-3430-4c10-8686-648c1ff102a2",
+  apiKey: "<KEY>",
   //address of the uWill contract
   uWillContractAddress: "",
   //websocket sercure url: This is so we can open a connection to EV from our listener
@@ -27,6 +27,7 @@ var wsSessionID;
 // bool for got event or not
 var receivedPingEvent;
 var receivedExecutionEvent;
+var pingCount;
 
 const uWillInstance = axios.create({
   baseURL: config.apiPrefix + config.uWillInstance,
@@ -64,32 +65,7 @@ ws.on("message", function incoming(data) {
     wsSessionID = data.sessionID;
     console.log("authenticated with WebSocket");
     console.log("writing to uWill contract...");
-    //run the ping function every 3 months
-    uWillInstance
-      .post("/ping")
-      .then((response) => {
-        console.log("response after post call to ping: ", response.data);
-        if (!response.data.success) {
-          console.log("post call not successful...");
-          process.exit(0);
-        }
-      })
-      .catch((err) => {
-        if (err.response.data) {
-          console.log(err.response.data);
-          if (err.response.data.error == "unknown contract") {
-            console.error("Wrong contract address in config object!");
-          }
-        } else {
-          console.log(error.response);
-        }
-        process.exit(0);
-      });
-  }
-
-  if (data.type == "event" && data.event_name == "Ping") {
-    receivedPingEvent = true;
-    console.log("Ping successful. Ping count is:", data.pingCount);
+    //This code block will run when pingCoung is 4 so 4x3 = 12 months have passed and owner has not reset ping
     if (pingCount > 3) {
       uWillInstance
         .post("./unlockFunds")
@@ -117,5 +93,29 @@ ws.on("message", function incoming(data) {
         );
       }
     }
+
+    uWillInstance
+      .post("/ping")
+      .then((response) => {
+        console.log("response after post call to ping: ", response.data);
+        if (!response.data.success) {
+          console.log("post call not successful...");
+          process.exit(0);
+        }
+        console.log("ping successful");
+        pingCount++;
+      })
+      .catch((err) => {
+        if (err.response.data) {
+          console.log(err.response.data);
+          if (err.response.data.error == "unknown contract") {
+            console.error("Wrong contract address in config object!");
+          }
+        } else {
+          console.log(error.response);
+        }
+        process.exit(0);
+      });
   }
+
 });
