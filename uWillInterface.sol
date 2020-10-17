@@ -51,5 +51,17 @@ interface uWillInterface {
      * emits a Claim event
      */
     function withdrawShare() external;
+
+    /**
+     * @dev supplies all available ETH to compound, getting cEth tokens in return
+     * 
+     */
+    function supplyToCompound(address payable _cEtherContractAddress) external returns (bool supplySuccessful);
+
+     /**
+     * @dev redeems the cEth tokens for ETH
+     * 
+     */
+    function redeemFromCompound(address payable _cEtherContractAddress) external returns (bool redemptionSuccessful);
     
 }

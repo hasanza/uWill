@@ -1,13 +1,24 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.17;
+pragma solidity ^0.7;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
 import "./Ownable.sol";
 import "./uWillInterface.sol";
 
-contract uWill is uWillInterface, Ownable {
+// compound wrapped Eth interface
+interface CEth {
+    function mint() external payable;
+    function exchangeRateCurrent() external returns (uint256);
+    function supplyRatePerBlock() external returns (uint256);
+    function redeemUnderlying(uint) external returns (uint);
+    function balanceOfUnderlying(address account) external returns (uint);
+}
+
+//getting "conract uWill should be marked as abstract" error for some reason...
+contract uWill is uWillInterface, Ownable, CEth {
+
     using SafeMath for uint256;
     using SafeMath for uint8;
 
@@ -92,14 +103,40 @@ contract uWill is uWillInterface, Ownable {
         totalPings = pingCount;
     }
 
-    //if called, signifies owner's life
+    //if called, resets ping count; signifies owner's life
     function resetPing() public override onlyOwner {
         pingCount = 0;
     }
 
     function unlockFunds() public override onlyOwner {
-        require(pingCount == 4); //if 3 month interval then 15 months and no ping reset
+        require(pingCount == 4); //if 3 month interval then 12 months and no ping reset
         unlocked = true;
         emit WillExecuted();
     }
+
+     function supplyToCompound(address payable _cEtherContractAddress) public onlyOwner override returns(bool supplySuccessful) {
+         //reference to eth cEth ctoken contract
+         CEth cToken = CEth(_cEtherContractAddress);
+        //current exchange rate between Eth cToken and ETH
+        uint256 exchangeRate = cToken.exchangeRateCurrent();
+        //how much we supplied
+        uint supplyRate = cToken.supplyRatePerBlock();
+        //supply eth to compound; value is msg.payable
+        cToken.mint();
+        //returning true to signify complete and successful operation
+        supplySuccessful = true;
+    }
+
+    function redeemFromCompound(address payable _cEtherContractAddress) public onlyOwner override returns (bool redemptionSuccessful) {
+        //reference to eth cEth ctoken contract
+         CEth cToken = CEth(_cEtherContractAddress);
+        uint256 redeemResult;
+        uint256 cTokenBalance = cToken.balanceOfUnderlying(address(this));
+        redeemResult = cToken.redeemUnderlying(cTokenBalance);
+        if (redeemResult == 0)
+            redemptionSuccessful = true;
+        else
+            redemptionSuccessful = false;
+    }
+
 }

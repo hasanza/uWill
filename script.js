@@ -25,10 +25,9 @@ if (!config.apiKey || !config.uWillContractAddress) {
 
 //to store websocket session id
 var wsSessionID;
-// bool for got event or not
-var receivedPingEvent;
-var receivedExecutionEvent;
 var pingCount;
+//goerli cEth address
+const cEthContractAddress = "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5";
 
 const uWillInstance = axios.create({
   baseURL: config.apiPrefix + config.uWillInstance,
@@ -90,13 +89,56 @@ ws.on("message", function incoming(data) {
       });
 
     //if pingCount == 0, supply funds to compound
-
+   if(pingCount == 0) {
+    uWillInstance.post('./supplyToCompound(cEthContractAddress)')
+    .then(response => {
+      if (!response.data.success) {
+        console.log("post call to supplyToCompound unsuccessful...");
+        process.exit(0);
+      }
+      if(response.data.data.supplySuccessful){
+        console.log("successfully suplied ETH to Compound");
+      }
+    })
+    .catch((err) => {
+      if (err.response.data) {
+        console.log(err.response.data);
+        if (err.response.data.error == "unknown contract") {
+          console.error("Wrong contract address in config object!");
+        }
+      } else {
+        console.log(error.response);
+      }
+      process.exit(0);
+    });
+   }
 
     //if the pingCount is > 3, withdrawFunds from Compound and then unlockFunds; Heirs can now withdraw
     if (pingCount > 3) {
-
       //withdraw funds from compound
+      uWillInstance.post('./redeemFromCompound')
+        .then(response => {
+          if (!response.data.success) {
+            console.log("post call to redeemrawFromCompound unsuccessful...");
+            process.exit(0);
+          }
+          if(response.data.data.redemptionSuccessful){
+            console.log("Redemption of CEth tokens for ETH from Compound successful");
+          }
+        })
+        .catch((err) => {
+          if (err.response.data) {
+            console.log(err.response.data);
+            if (err.response.data.error == "unknown contract") {
+              console.error("Wrong contract address in config object!");
+            }
+          } else {
+            console.log(error.response);
+          }
+          process.exit(0);
+        });
 
+      //After withdrawing funds from compound, unlock the funds
       uWillInstance
         .post("./unlockFunds")
         .then((response) => {
