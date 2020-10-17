@@ -20,8 +20,6 @@ contract uWill is uWillInterface, Ownable {
 
     mapping(address => uint8) Shares;
 
-
-
     event WillExecuted ();
     event ShareCollected(string collectingHeir);
     event Ping(uint pingCount);
