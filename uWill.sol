@@ -8,7 +8,6 @@ import "./Ownable.sol";
 import "./uWillInterface.sol";
 
 contract uWill is uWillInterface, Ownable {
-
     using SafeMath for uint256;
     using SafeMath for uint8;
 
@@ -20,23 +19,26 @@ contract uWill is uWillInterface, Ownable {
 
     mapping(address => uint8) Shares;
 
-    event WillExecuted ();
+    event WillExecuted();
     event ShareCollected(string collectingHeir);
-    event Ping(uint pingCount);
+    event Ping(uint256 pingCount);
 
-    constructor(Heir[] memory _heirs) public{
+    constructor(Heir[] memory _heirs) public {
         unlocked = false;
         pingCount = 0;
         heirs = _heirs;
     }
 
-    function addHeir(Heir memory heir) public onlyOwner override{
+    function addHeir(Heir memory heir) public override onlyOwner {
         heirs.push(heir);
     }
 
-    function removeHeir(string memory heirName) public onlyOwner override{
+    function removeHeir(string memory heirName) public override onlyOwner {
         for (uint256 i; i < heirs.length; i++) {
-            if (keccak256(abi.encodePacked(heirs[i].name)) == keccak256(abi.encodePacked(heirName))) {
+            if (
+                keccak256(abi.encodePacked(heirs[i].name)) ==
+                keccak256(abi.encodePacked(heirName))
+            ) {
                 //shift places with last heir
                 heirs[i] = heirs[heirs.length];
                 //remove last heir
@@ -45,7 +47,12 @@ contract uWill is uWillInterface, Ownable {
         }
     }
 
-    function setShare(address heir, uint8 share) public onlyOwner isHeir(heir) override{
+    function setShare(address heir, uint8 share)
+        public
+        override
+        onlyOwner
+        isHeir(heir)
+    {
         //shares in percentages e.g. 25 means funds x 0.25
         require(totalShares + share <= 100, "Total share % must add up to 100");
         totalShares.add(share);
@@ -63,12 +70,12 @@ contract uWill is uWillInterface, Ownable {
         _;
     }
 
-    function withdrawShare() public isHeir(msg.sender) override{
+    function withdrawShare() public override isHeir(msg.sender) {
         require(unlocked);
         msg.sender.transfer(address(this).balance * Shares[msg.sender]);
         string memory collectingHeir;
-        for (uint i; i<heirs.length; i++) {
-            if(msg.sender == heirs[i].heirAddress){
+        for (uint256 i; i < heirs.length; i++) {
+            if (msg.sender == heirs[i].heirAddress) {
                 collectingHeir = heirs[i].name;
             }
         }
@@ -76,17 +83,21 @@ contract uWill is uWillInterface, Ownable {
     }
 
     //called by script at 3 month intervals for a maximum of 4 times (12months max) before unlocking funds
-    function ping() public onlyOwner override {
+    function ping() public override onlyOwner {
         pingCount.add(1);
         emit Ping(pingCount);
     }
 
+    function getPingCount() external override view returns (uint8 totalPings) {
+        totalPings = pingCount;
+    }
+
     //if called, signifies owner's life
-    function resetPing() public onlyOwner override {
+    function resetPing() public override onlyOwner {
         pingCount = 0;
     }
 
-    function unlockFunds() public onlyOwner override{
+    function unlockFunds() public override onlyOwner {
         require(pingCount == 4); //if 3 month interval then 15 months and no ping reset
         unlocked = true;
         emit WillExecuted();

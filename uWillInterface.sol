@@ -28,7 +28,10 @@ interface uWillInterface {
      */
     function ping() external;
 
-    // function getInterval() external returns (uint8);
+    /**
+     * @dev returns the current pingCount
+     */
+    function getPingCount() external returns(uint8);
 
     /**
      * @dev resets uint ping to 0;
