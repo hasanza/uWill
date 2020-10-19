@@ -2,11 +2,6 @@
 pragma experimental ABIEncoderV2;
 
 interface uWillInterface {
-    
-    struct Heir {
-        string name;
-        address heirAddress;
-    }
 
     /**
      * @dev adds an address to the heir address array

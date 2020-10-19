@@ -26,6 +26,11 @@ contract uWill is uWillInterface, Ownable, CEth {
     uint8 pingCount;
     uint8 totalShares;
 
+    struct Heir {
+        string name;
+        address heirAddress;
+    }
+
     Heir[] heirs;
 
     mapping(address => uint8) Shares;
