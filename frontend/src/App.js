@@ -2,7 +2,7 @@ import React from 'react';
 import './App.css';
 import {makeStyles} from '@material-ui/core/styles';
 import {CssBaseline} from '@material-ui/core';
-import {Nav} from './components';
+import {Nav, MakeWill} from './components';
 
 //custom CSS
 const useStyles = makeStyles((theme)=>({
@@ -21,6 +21,7 @@ function App() {
     <div className={classes.root}>
       <CssBaseline/>
       <Nav/>
+      <MakeWill/>
     </div>
   );
 }

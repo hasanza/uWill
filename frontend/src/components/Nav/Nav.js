@@ -64,9 +64,9 @@ function Nav() {
           <span style={{ fontSize: "45px", color: "#fff" }}>Welcome to</span>{" "}
           <span className={styles.d}>decentralised inheritance.</span>
           <h1 style={{marginTop: "8rem"}}>
-            <IconButton>
+            {/* <IconButton>
               <ExpandMoreIcon className={classes.goDown} />
-            </IconButton>
+            </IconButton> */}
           </h1>
         </div>
       </Collapse>
