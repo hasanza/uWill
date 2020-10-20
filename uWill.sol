@@ -9,8 +9,6 @@ import "./Ownable.sol";
 // compound wrapped Eth interface
 interface CEth {
     function mint() external payable;
-    function exchangeRateCurrent() external returns (uint256);
-    function supplyRatePerBlock() external returns (uint256);
     function redeemUnderlying(uint) external returns (uint);
     function balanceOfUnderlying(address account) external returns (uint);
 }
@@ -181,10 +179,6 @@ contract uWill is uWillInterface, Ownable, CEth {
      function supplyToCompound(address payable _cEtherContractAddress) public onlyOwner override returns(bool supplySuccessful) {
          //reference to eth cEth ctoken contract
          CEth cToken = CEth(_cEtherContractAddress);
-        //current exchange rate between Eth cToken and ETH
-        uint256 exchangeRate = cToken.exchangeRateCurrent();
-        //how much we supplied
-        uint supplyRate = cToken.supplyRatePerBlock();
         //supply eth to compound; value is msg.payable
         cToken.mint();
         //returning true to signify complete and successful operation
