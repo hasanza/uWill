@@ -158,7 +158,7 @@ contract Ownable {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor () {
+    constructor () internal {
         _owner = msg.sender;
         emit OwnershipTransferred(address(0), _owner);
     }
@@ -232,12 +232,12 @@ interface uWillInterface {
     /**
      * @dev adds an address to the heir address array
      */
-    function addHeir(Heir memory heir) external;
+    function addHeir(Heir calldata heir) external;
 
     /**
      * @dev adds an address to the heir address array
      */
-    function removeHeir(string memory heirName) external;
+    function removeHeir(string calldata heirName) external;
 
     /**
      * @dev sets the share of an heir in the heir=>share Share mapping.
@@ -252,7 +252,7 @@ interface uWillInterface {
     /**
      * @dev returns the current pingCount
      */
-    function getPingCount() external returns(uint8);
+    function getPingCount() external view returns(uint8);
 
     /**
      * @dev resets uint ping to 0;
@@ -285,22 +285,6 @@ interface uWillInterface {
      */
     function redeemFromCompound(address payable _cEtherContractAddress) external returns (bool redemptionSuccessful);
     
-}
-
-contract willFactory {
-
-    uWill[] public wills;
-    
-    function createWill(Heir[] calldata _heirs) external {
-        
-        uWill will = new uWill(_heirs);
-
-        emit WillCreated(will, wills.length);
-
-        wills.push(will);
-    }
-
-    event WillCreated(uWill will, uint256 willIndex);
 }
 
 //getting "conract uWill should be marked as abstract" error for some reason...
@@ -422,3 +406,20 @@ contract uWill is uWillInterface, Ownable, CEth {
     }
 
 }
+
+contract willFactory is uWill {
+
+    uWill[] public wills;
+    
+    function createWill(Heir[] calldata _heirs) external {
+        
+        uWill will = new uWill(_heirs);
+
+        emit WillCreated(will, wills.length);
+
+        wills.push(will);
+    }
+
+    event WillCreated(uWill will, uint256 willIndex);
+}
+
