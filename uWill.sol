@@ -288,7 +288,7 @@ interface uWillInterface {
 }
 
 //getting "conract uWill should be marked as abstract" error for some reason...
-contract uWill is uWillInterface, Ownable, CEth {
+contract uWill is uWillInterface, Ownable {
 
     using SafeMath for uint256;
     using SafeMath for uint8;
@@ -308,7 +308,9 @@ contract uWill is uWillInterface, Ownable, CEth {
     constructor(Heir[] memory _heirs) public {
         unlocked = false;
         pingCount = 0;
-        heirs = _heirs;
+        for (uint i=0; i<_heirs.length; i++){
+            heirs.push(_heirs[i]);
+        }
     }
 
     function addHeir(Heir memory heir) public onlyOwner {
