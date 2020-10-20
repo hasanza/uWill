@@ -327,11 +327,11 @@ contract uWill is uWillInterface, Ownable, CEth {
         heirs = _heirs;
     }
 
-    function addHeir(Heir memory heir) public override onlyOwner {
+    function addHeir(Heir memory heir) public onlyOwner {
         heirs.push(heir);
     }
 
-    function removeHeir(string memory heirName) public override onlyOwner {
+    function removeHeir(string memory heirName) public onlyOwner {
         for (uint256 i; i < heirs.length; i++) {
             if (
                 keccak256(abi.encodePacked(heirs[i].name)) ==
@@ -347,7 +347,6 @@ contract uWill is uWillInterface, Ownable, CEth {
 
     function setShare(address heir, uint8 share)
         public
-        override
         onlyOwner
         isHeir(heir)
     {
@@ -368,7 +367,7 @@ contract uWill is uWillInterface, Ownable, CEth {
         _;
     }
 
-    function withdrawShare() public override isHeir(msg.sender) {
+    function withdrawShare() public isHeir(msg.sender) {
         require(unlocked);
         msg.sender.transfer(address(this).balance * Shares[msg.sender]);
         string memory collectingHeir;
@@ -381,27 +380,27 @@ contract uWill is uWillInterface, Ownable, CEth {
     }
 
     //called by script at 3 month intervals for a maximum of 4 times (12months max) before unlocking funds
-    function ping() public override onlyOwner {
+    function ping() public onlyOwner {
         pingCount.add(1);
         emit Ping(pingCount);
     }
 
-    function getPingCount() external override view returns (uint8 totalPings) {
+    function getPingCount() external view returns (uint8 totalPings) {
         totalPings = pingCount;
     }
 
     //if called, resets ping count; signifies owner's life
-    function resetPing() public override onlyOwner {
+    function resetPing() public onlyOwner {
         pingCount = 0;
     }
 
-    function unlockFunds() public override onlyOwner {
+    function unlockFunds() public onlyOwner {
         require(pingCount == 4); //if 3 month interval then 12 months and no ping reset
         unlocked = true;
         emit WillExecuted();
     }
 
-     function supplyToCompound(address payable _cEtherContractAddress) public onlyOwner override returns(bool supplySuccessful) {
+     function supplyToCompound(address payable _cEtherContractAddress) public onlyOwner returns(bool supplySuccessful) {
          //reference to eth cEth ctoken contract
          CEth cToken = CEth(_cEtherContractAddress);
         //supply eth to compound; value is msg.payable
@@ -410,7 +409,7 @@ contract uWill is uWillInterface, Ownable, CEth {
         supplySuccessful = true;
     }
 
-    function redeemFromCompound(address payable _cEtherContractAddress) public onlyOwner override returns (bool redemptionSuccessful) {
+    function redeemFromCompound(address payable _cEtherContractAddress) public onlyOwner returns (bool redemptionSuccessful) {
         //reference to eth cEth ctoken contract
          CEth cToken = CEth(_cEtherContractAddress);
         uint256 redeemResult;
