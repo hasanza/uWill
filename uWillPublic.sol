@@ -3,6 +3,72 @@
 pragma solidity >=0.5;
 pragma experimental ABIEncoderV2;
 
+pragma solidity >=0.5.17;
+
+ contract Ownable {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor () internal {
+        _owner = msg.sender;
+        emit OwnershipTransferred(address(0), _owner);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(isOwner(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Returns true if the caller is the current owner.
+     */
+    function isOwner() public view returns (bool) {
+        return msg.sender == _owner;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * > Note: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     */
+    function _transferOwnership(address newOwner) internal {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
 // compound wrapped Eth interface
 interface CEth {
     function mint() external payable;
@@ -87,7 +153,7 @@ interface uWillInterface {
 }
 
 //getting "conract uWill should be marked as abstract" error for some reason...
-contract uWill is uWillInterface {
+contract uWill is uWillInterface, Ownable {
 
     bool unlocked;
     uint8 pingCount;
@@ -122,14 +188,13 @@ contract uWill is uWillInterface {
             ShareCollected[_heirs[i].heirAddress] = false;
             Shares[_heirs[i].heirAddress] = _heirs[i].share;
         }
-        supplyToCompound.value(msg.value);
     }
     
-    function setCEtherContractAddress (address payable addr) public {
+    function setCEtherContractAddress (address payable addr) public onlyOwner {
         cEtherContractAddress = addr;
     }
 
-    function addHeir(Heir memory heir) public {
+    function addHeir(Heir memory heir) public onlyOwner{
         require(percentageSharesDistributed < 100, 'No funds remaining...');
         heirs.push(heir);
         ShareCollected[heir.heirAddress] = false;
@@ -137,7 +202,7 @@ contract uWill is uWillInterface {
         emit NewHeirAdded(heir.name, heir.heirAddress);
     }
 
-    function removeHeir(string memory heirName) public {
+    function removeHeir(string memory heirName) public onlyOwner {
         
         for (uint256 i; i < heirs.length; i++) {
             if (
@@ -164,7 +229,7 @@ contract uWill is uWillInterface {
 
     function setShare(address heir, uint8 percentageShare)
         public
-        isHeir(heir)
+        isHeir(heir) onlyOwner
     {
         //shares in percentages e.g. 25 means funds x 0.25
         require(percentageSharesDistributed + percentageShare <= 100 && percentageSharesDistributed + percentageShare >= 0, "Total share % must be less than or add up to 100");
@@ -180,7 +245,7 @@ contract uWill is uWillInterface {
         }
     }
     
-    function setFallBackAddress(address payable _fallBackAddr) public {
+    function setFallBackAddress(address payable _fallBackAddr) public onlyOwner {
         fallBackAddress = _fallBackAddr;
         emit FallBackAddressSet(fallBackAddress);
     }
@@ -211,7 +276,7 @@ contract uWill is uWillInterface {
     }
 
     //called by script at 3 month intervals for a maximum of 4 times (12months max) before unlocking funds
-    function ping() public {
+    function ping() public onlyOwner {
         require(pingCount <=4, "Funds have already been released");
         pingCount += 1;
         emit Ping(pingCount);
@@ -222,11 +287,11 @@ contract uWill is uWillInterface {
     }
 
     //if called, resets ping count; signifies owner's life
-    function resetPing() public {
+    function resetPing() public onlyOwner {
         pingCount = 0;
     }
 
-    function unlockFunds() public  {
+    function unlockFunds() public onlyOwner {
         require(pingCount > 4, "Execution period not yet reached."); //if 3 month interval then 12 months and no ping reset
         unlocked = true;
         redeemFromCompound();
@@ -238,7 +303,7 @@ contract uWill is uWillInterface {
         emit WillExecuted();
     }
 
-     function supplyToCompound() payable public returns(bool supplySuccessful) {
+     function supplyToCompound() payable onlyOwner public returns(bool supplySuccessful) {
          require(msg.value > 0, "Please send some ETH.");
          //reference to eth cEth ctoken contract
          CEth cToken = CEth(cEtherContractAddress);
@@ -249,7 +314,7 @@ contract uWill is uWillInterface {
         emit SupplySuccessful(msg.value);
     }
 
-    function redeemFromCompound() public  returns (bool redemptionSuccessful) {
+    function redeemFromCompound() public onlyOwner returns (bool redemptionSuccessful) {
         //reference to eth cEth ctoken contract
          CEth cToken = CEth(cEtherContractAddress);
         uint256 redeemResult;
@@ -260,11 +325,6 @@ contract uWill is uWillInterface {
         else
             redemptionSuccessful = false;
             emit RedemptionSuccessfull(cTokenBalance);
-    }
-    
-    function() external payable {
-        emit ReceivedFunds (msg.value);
-        supplyToCompound.value(msg.value);
     }
 
 }
