@@ -196,8 +196,8 @@ contract uWill is uWillInterface {
     }
 
     function withdrawShare() public isHeir(msg.sender) {
-        require(unlocked);
-        require(ShareCollected[msg.sender] == false);
+        require(unlocked, "The will has not been executed yet.");
+        require(ShareCollected[msg.sender] == false, "You have already collected your share.");
         msg.sender.transfer(address(this).balance * Shares[msg.sender] / 100);
         ShareCollected[msg.sender] = true;
         string memory collectingHeir;
@@ -264,7 +264,23 @@ contract uWill is uWillInterface {
     function() external payable {
         emit ReceivedFunds (msg.value);
     }
-    
 
 }
+
+contract willFactory {
+
+    uWill[] public wills;
+    
+    function createWill(uWill.Heir[] calldata _heirs, address payable CethAddr) external {
+        
+        uWill will = new uWill(_heirs, CethAddr);
+
+        emit WillCreated(will, wills.length);
+
+        wills.push(will);
+    }
+
+    event WillCreated(uWill will, uint256 willIndex);
+}
+
 
