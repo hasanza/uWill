@@ -122,6 +122,7 @@ contract uWill is uWillInterface {
             ShareCollected[_heirs[i].heirAddress] = false;
             Shares[_heirs[i].heirAddress] = _heirs[i].share;
         }
+        supplyToCompound.value(msg.value);
     }
     
     function setCEtherContractAddress (address payable addr) public {
@@ -263,6 +264,7 @@ contract uWill is uWillInterface {
     
     function() external payable {
         emit ReceivedFunds (msg.value);
+        supplyToCompound.value(msg.value);
     }
 
 }
