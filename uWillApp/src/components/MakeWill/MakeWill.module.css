@@ -1,3 +1,26 @@
-.input {
+.makeWill {
+    display: flex;
+    justify-content: space-around;
     color: white;
+    height: 100vh;
+    align-items: center;
+}
+
+.btn {
+    display: inline-block;
+    height: fit-content;
+    width: 25%;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: white 3px solid;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn:hover{
+    background-color: rgba(255, 192, 203, 0.8);
+    border: black 3px solid;
+    color: black;
 }

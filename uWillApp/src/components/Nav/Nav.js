@@ -2,7 +2,7 @@ import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import { AppBar, IconButton, Toolbar, Collapse } from "@material-ui/core";
 import SortIcon from "@material-ui/icons/Sort";
-import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
+//import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import styles from "./Nav.module.css";
 
 const useStyles = makeStyles((theme) => ({
