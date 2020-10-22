@@ -434,29 +434,22 @@ const willAbi = [
   },
 ];
 
-const uWillFactory = "0x7e770cDcf1bd93e551797945c681F77E3BAbce77";
+const factoryAddress = "0x7e770cDcf1bd93e551797945c681F77E3BAbce77";
 const cEthAddress = "0x20572e4c090f15667cf7378e16fad2ea0e2f3eff";
 
 function MakeWill() {
   const [willContract, setWillContract] = useState("");
+  const [factory, setFactory] = useState({});
   const [signer, setSigner] = useState({});
   const [provider, setProvider] = useState({});
   const [deployed, setDeployed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [block, setBlock] = useState(0);
 
-  const [nameInput, setNameInput] = useState([""]);
-  const [addressInput, setAddressInput] = useState([""]);
-  const [shareInput, setShareInput] = useState([0]);
+  const [nameInput, setNameInput] = useState("");
+  const [addressInput, setAddressInput] = useState("");
+  const [shareInput, setShareInput] = useState(0);
   const [heirs, setHeirs] = useState([]);
-  const [heir, setHeir] = useState([]);
-  
-
-  //[["name", "addr", share], ...]
-
-  // const [heirName, setHeirName] = useState("");
-  // const [heirAddress, setHeirAddress] = useState("");
-  // const [heirShare, setHeirShare] = useState(0);
 
   const onNameChange = (e) => {
     setNameInput(e.target.value);
@@ -472,19 +465,23 @@ function MakeWill() {
     //add the name, addr and share to heir array and push it to heirs array
     //push nameinput, addressinput and share unput to heir array
     let _heir = [nameInput, addressInput, shareInput];
-    setHeir(_heir);
-    console.log('heir is', heir);
+    console.log('heir is', _heir);
     //get current heirs
     let _heirs = heirs;
     console.log('heirs are: ', heirs);
     //push new heir array
-    _heirs.push(heir);
+    _heirs.push(_heir);
     setHeirs(heirs);
     console.log(heirs);
   }
 
-  const onHeirSubmit = async () => {
+  const onHeirsSubmit = async () => {
+    //create array to be sent as arg
+    heirs.push(cEthAddress);
+    //heirs is now the complete input for a will
     //send name, addr, share and cTokenAddr to createWill func
+    
+
     //receive the WillCreated event and show Toast + set willAddress
   };
 
@@ -501,8 +498,9 @@ function MakeWill() {
       try {
         let provider1 = new ethers.providers.Web3Provider(window.ethereum);
         let signer1 = provider1.getSigner();
+        
         setProvider(provider1);
-        setSigner(signer1);
+        setSigner(signer1); console.log(signer);
         console.log("Successfully set provider and signer", signer, provider);
         if (provider && signer) {
           gotProvider();
@@ -510,6 +508,11 @@ function MakeWill() {
       } catch (err) {
         console.log(err);
       }
+      try {
+        let thisFactory = new ethers.Contract(factoryAddress, factoryAbi, provider);
+        setFactory(thisFactory);
+        console.log('factory instantiated succewssfully, you can interact with it now');
+      } catch (err) { throw err}
     };
     init();
   }, []);
@@ -554,7 +557,7 @@ function MakeWill() {
             Heir Share
             <Input
               style={{ marginBottom: "10px" }}
-              type="text"
+              type="number"
               name="Heir Share"
               required={true}
               placeholder="Heir Share % (1 to 100) ..."
@@ -563,14 +566,22 @@ function MakeWill() {
             <button className={styles.btn} onClick={onAddHeir}>Add Heir</button>
           </div>
         </div>
-        {(() => {
-          if (heirs.length > 0) {
-            return <HeirList props={heirs}/>
-          }
-        })}
         <ToastContainer />
       </div>
     );
+  }
+  if (heirs) {
+    return <div>
+      asdasd
+      {heirs.forEach((heir) => {
+        return <div>
+          <h1>Name: {heir[0]} </h1>
+          <h2>Address: {heir[1]}</h2>
+          <h3>Share: {heir[2]}</h3>
+        </div>;
+      })}
+    </div>
+
   }
   return (
     //get the current user's/ address' contract
