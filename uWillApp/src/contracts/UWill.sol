@@ -172,7 +172,6 @@ contract uWill is uWillInterface, Ownable {
     event NewHeirAdded(string name, address heirAddress);
     event HeirRemoved(string name);
     event PercentageShareSet(uint8 percentage);
-    event ReceivedFunds(uint256 amount);
     event SupplySuccessful(uint256 suppliedAmount);
     event RedemptionSuccessfull(uint256 cTokensRedeemed);
     event FundsFullyDistributed();

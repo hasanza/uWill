@@ -1,142 +1,526 @@
-import React, {useState } from "react";
-import { ethers } from "ethers";
+import React, { useState, useEffect } from "react";
 import styles from "./MakeWill.module.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { ethers } from "ethers";
+import { Button, Card, Text, Icon, Loader, Input, Heading } from "rimble-ui";
+
+//abi of the factory contract, will call the createWill function from here
+const factoryAbi = [
+  {
+    constant: false,
+    inputs: [
+      {
+        components: [
+          {
+            internalType: "string",
+            name: "name",
+            type: "string",
+          },
+          {
+            internalType: "address",
+            name: "heirAddress",
+            type: "address",
+          },
+          {
+            internalType: "uint8",
+            name: "share",
+            type: "uint8",
+          },
+        ],
+        internalType: "struct uWillInterface.Heir[]",
+        name: "_heirs",
+        type: "tuple[]",
+      },
+      {
+        internalType: "address payable",
+        name: "CethAddr",
+        type: "address",
+      },
+    ],
+    name: "createWill",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "contract uWill",
+        name: "will",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "willIndex",
+        type: "uint256",
+      },
+    ],
+    name: "WillCreated",
+    type: "event",
+  },
+  {
+    constant: true,
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "wills",
+    outputs: [
+      {
+        internalType: "contract uWill",
+        name: "",
+        type: "address",
+      },
+    ],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+];
+const willAbi = [
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: "string", name: "name", type: "string" },
+          { internalType: "address", name: "heirAddress", type: "address" },
+          { internalType: "uint8", name: "share", type: "uint8" },
+        ],
+        internalType: "struct uWillInterface.Heir[]",
+        name: "_heirs",
+        type: "tuple[]",
+      },
+      { internalType: "address payable", name: "cEthAddr", type: "address" },
+    ],
+    payable: true,
+    stateMutability: "payable",
+    type: "constructor",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "address payable",
+        name: "fallBackAddress",
+        type: "address",
+      },
+    ],
+    name: "FallBackAddressSet",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [],
+    name: "FundsFullyDistributed",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: false, internalType: "string", name: "name", type: "string" },
+    ],
+    name: "HeirRemoved",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: false, internalType: "string", name: "name", type: "string" },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "heirAddress",
+        type: "address",
+      },
+    ],
+    name: "NewHeirAdded",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferred",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "percentageRemaining",
+        type: "uint256",
+      },
+    ],
+    name: "PercentageFundsRemaining",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint8",
+        name: "percentage",
+        type: "uint8",
+      },
+    ],
+    name: "PercentageShareSet",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "pingCount",
+        type: "uint256",
+      },
+    ],
+    name: "Ping",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "cTokensRedeemed",
+        type: "uint256",
+      },
+    ],
+    name: "RedemptionSuccessfull",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "collectingHeir",
+        type: "string",
+      },
+    ],
+    name: "ShareCollectedBy",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "suppliedAmount",
+        type: "uint256",
+      },
+    ],
+    name: "SupplySuccessful",
+    type: "event",
+  },
+  { anonymous: false, inputs: [], name: "WillExecuted", type: "event" },
+  {
+    constant: false,
+    inputs: [
+      {
+        components: [
+          { internalType: "string", name: "name", type: "string" },
+          { internalType: "address", name: "heirAddress", type: "address" },
+          { internalType: "uint8", name: "share", type: "uint8" },
+        ],
+        internalType: "struct uWillInterface.Heir",
+        name: "heir",
+        type: "tuple",
+      },
+    ],
+    name: "addHeir",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: "getHeirs",
+    outputs: [
+      {
+        components: [
+          { internalType: "string", name: "name", type: "string" },
+          { internalType: "address", name: "heirAddress", type: "address" },
+          { internalType: "uint8", name: "share", type: "uint8" },
+        ],
+        internalType: "struct uWillInterface.Heir[]",
+        name: "_heirs",
+        type: "tuple[]",
+      },
+    ],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: "getPingCount",
+    outputs: [{ internalType: "uint8", name: "totalPings", type: "uint8" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: "isOwner",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "ping",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "redeemFromCompound",
+    outputs: [
+      { internalType: "bool", name: "redemptionSuccessful", type: "bool" },
+    ],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [{ internalType: "string", name: "heirName", type: "string" }],
+    name: "removeHeir",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "resetPing",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [
+      { internalType: "address payable", name: "addr", type: "address" },
+    ],
+    name: "setCEtherContractAddress",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        internalType: "address payable",
+        name: "_fallBackAddr",
+        type: "address",
+      },
+    ],
+    name: "setFallBackAddress",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [
+      { internalType: "address", name: "heir", type: "address" },
+      { internalType: "uint8", name: "percentageShare", type: "uint8" },
+    ],
+    name: "setShare",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "supplyToCompound",
+    outputs: [{ internalType: "bool", name: "supplySuccessful", type: "bool" }],
+    payable: true,
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [{ internalType: "address", name: "newOwner", type: "address" }],
+    name: "transferOwnership",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "unlockFunds",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: "withdrawShare",
+    outputs: [],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
+
+const uWillFactory = "0x7e770cDcf1bd93e551797945c681F77E3BAbce77";
+const cEthAddress = "0x20572e4c090f15667cf7378e16fad2ea0e2f3eff";
 
 function MakeWill() {
-
-  const abi = [
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "internalType": "address",
-              "name": "heirAddress",
-              "type": "address"
-            },
-            {
-              "internalType": "uint8",
-              "name": "share",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct uWillInterface.Heir[]",
-          "name": "_heirs",
-          "type": "tuple[]"
-        },
-        {
-          "internalType": "address payable",
-          "name": "CethAddr",
-          "type": "address"
-        }
-      ],
-      "name": "createWill",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "contract uWill",
-          "name": "will",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "willIndex",
-          "type": "uint256"
-        }
-      ],
-      "name": "WillCreated",
-      "type": "event"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "wills",
-      "outputs": [
-        {
-          "internalType": "contract uWill",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    }
-  ];
-  
-  const uWillFactory = "0x7e770cDcf1bd93e551797945c681F77E3BAbce77";
-  const cEthAddress = "0x20572e4c090f15667cf7378e16fad2ea0e2f3eff";
-  
-  let provider;
-  window.ethereum.enable().then(provider = new ethers.providers.Web3Provider(window.ethereum));
-  const signer = provider.getSigner();
-
-
-const factory = new ethers.Contract(uWillFactory, abi, signer);
-
-
-  const [willContract, setWillContract] = useState(null);
+  const [willContract, setWillContract] = useState(undefined);
+  const [signer, setSigner] = useState({});
+  const [provider, setProvider] = useState({});
   const [deployed, setDeployed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [block, setBlock] = useState(0);
+  const [heir, setHeir] = useState({});
+  const [input, setInput] = useState("");
 
-  const makeWill = async () => {
-      //call create Will function of factory
-      console.log('calling factory with inputs');
-      setLoading(true);
-      const txCreatingWill = await factory.createWill(["Hasan", "0x2fbD5a00723DbFf461dc1B1Ba6A021FDd2a2Cd7a", 25], cEthAddress);
-      setLoading(false);
-      console.log('tx hash:, ', txCreatingWill.hash);
-  }
+  const gotProvider = () => toast.dark("Connected to Provider");
 
-  factory.on("WillCreated", (will, willIndex) => {
-    setWillContract(will);
-    console.log(`This is the ${willIndex}th will contract.`);
-  })
+  const getBlock = async () => {
+    let n = await provider.getBalance(cEthAddress);
+    setBlock(ethers.utils.formatEther(n));
+  };
 
-  if(loading) {
-    return <div className={styles.makeWill}>deploying a will...</div>
+  useEffect(() => {
+    //get the web3 object form the provider i.e. metamask
+    const init = async () => {
+      try {
+        let provider1 = new ethers.providers.Web3Provider(window.ethereum);
+        let signer1 = provider1.getSigner();
+        setProvider(provider1);
+        setSigner(signer1);
+        console.log("Successfully set provider and signer", signer, provider);
+        if (provider && signer) {
+          gotProvider();
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    init();
+  }, []);
+
+  if (loading) {
+    return <div className={styles.makeWill}>deploying a will...</div>;
   }
   if (!deployed) {
     return (
-      <div >
+      <div>
         <div className={styles.makeWill}>
-          <h1 style={{ fontSize: "3rem" }}>Make a Will</h1>
-          <button className={styles.btn} onClick={makeWill}>
-            Deploy Contract
-            </button>
+          <div>
+            <Heading as={"h1"} style={{ fontSize: "3rem" }}>Make a Will</Heading>
+            <Card bg="black" color="white" maxWidth={"300px"}>
+              <Text>{block}</Text>
+            </Card>
+            <button onClick={getBlock} >Get Balance</button>
+          </div>
+          <form style={{display:"flex", flexDirection:"column"}} >
+            <Input
+            style={{marginBottom: "10px"}}
+              type="text"
+              name="Heir Name"
+              required={true}
+              placeholder="Heir Name ..."
+            /><Input
+            style={{marginBottom: "10px"}}
+              type="text"
+              name="Heir Address"
+              required={true}
+              placeholder="Heir Address ..."
+            /><Input
+            style={{marginBottom: "10px"}}
+              type="text"
+              name="Heir Share"
+              required={true}
+              placeholder="Heir Share % (1 to 100) ..."
+            />
+            <Button size={"large"}>
+              Deploy Contract
+            </Button>
+          </form>
         </div>
+        <ToastContainer />
       </div>
     );
   }
   return (
-    //get the current user's/ address' contract 
+    //get the current user's/ address' contract
     <div>
       <h1>Your will address is {willContract}</h1>
     </div>
-  )
-  
+  );
 }
 
 export default MakeWill;
