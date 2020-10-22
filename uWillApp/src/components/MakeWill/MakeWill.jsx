@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ethers } from "ethers";
 import { Button, Card, Text, Icon, Loader, Input, Heading } from "rimble-ui";
+import {HeirList} from '../';
 
 //abi of the factory contract, will call the createWill function from here
 const factoryAbi = [
@@ -437,14 +438,55 @@ const uWillFactory = "0x7e770cDcf1bd93e551797945c681F77E3BAbce77";
 const cEthAddress = "0x20572e4c090f15667cf7378e16fad2ea0e2f3eff";
 
 function MakeWill() {
-  const [willContract, setWillContract] = useState(undefined);
+  const [willContract, setWillContract] = useState("");
   const [signer, setSigner] = useState({});
   const [provider, setProvider] = useState({});
   const [deployed, setDeployed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [block, setBlock] = useState(0);
-  const [heir, setHeir] = useState({});
-  const [input, setInput] = useState("");
+
+  const [nameInput, setNameInput] = useState([""]);
+  const [addressInput, setAddressInput] = useState([""]);
+  const [shareInput, setShareInput] = useState([0]);
+  const [heirs, setHeirs] = useState([]);
+  const [heir, setHeir] = useState([]);
+  
+
+  //[["name", "addr", share], ...]
+
+  // const [heirName, setHeirName] = useState("");
+  // const [heirAddress, setHeirAddress] = useState("");
+  // const [heirShare, setHeirShare] = useState(0);
+
+  const onNameChange = (e) => {
+    setNameInput(e.target.value);
+  };
+  const onAddrChange = (e) => {
+    setAddressInput(e.target.value);
+  };
+  const onShareChange = (e) => {
+    setShareInput(e.target.value);
+  };
+
+  const onAddHeir = () => {
+    //add the name, addr and share to heir array and push it to heirs array
+    //push nameinput, addressinput and share unput to heir array
+    let _heir = [nameInput, addressInput, shareInput];
+    setHeir(_heir);
+    console.log('heir is', heir);
+    //get current heirs
+    let _heirs = heirs;
+    console.log('heirs are: ', heirs);
+    //push new heir array
+    _heirs.push(heir);
+    setHeirs(heirs);
+    console.log(heirs);
+  }
+
+  const onHeirSubmit = async () => {
+    //send name, addr, share and cTokenAddr to createWill func
+    //receive the WillCreated event and show Toast + set willAddress
+  };
 
   const gotProvider = () => toast.dark("Connected to Provider");
 
@@ -475,42 +517,57 @@ function MakeWill() {
   if (loading) {
     return <div className={styles.makeWill}>deploying a will...</div>;
   }
-  if (!deployed) {
+  //if a will contract has been deployed for this address
+  if (!willContract) {
     return (
       <div>
         <div className={styles.makeWill}>
           <div>
-            <Heading as={"h1"} style={{ fontSize: "3rem" }}>Make a Will</Heading>
+            <Heading as={"h1"} style={{ fontSize: "3rem" }}>
+              Make a Will
+            </Heading>
             <Card bg="black" color="white" maxWidth={"300px"}>
               <Text>{block}</Text>
             </Card>
-            <button onClick={getBlock} >Get Balance</button>
+            <button onClick={getBlock}>Get Balance</button>
           </div>
-          <form style={{display:"flex", flexDirection:"column"}} >
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            Heir Name
             <Input
-            style={{marginBottom: "10px"}}
+              style={{ marginBottom: "10px" }}
               type="text"
               name="Heir Name"
               required={true}
               placeholder="Heir Name ..."
-            /><Input
-            style={{marginBottom: "10px"}}
+              onChange = {onNameChange}
+            />
+            Heir Address
+            <Input
+              style={{ marginBottom: "10px" }}
               type="text"
               name="Heir Address"
               required={true}
               placeholder="Heir Address ..."
-            /><Input
-            style={{marginBottom: "10px"}}
+              onChange = {onAddrChange}
+
+            />
+            Heir Share
+            <Input
+              style={{ marginBottom: "10px" }}
               type="text"
               name="Heir Share"
               required={true}
               placeholder="Heir Share % (1 to 100) ..."
+              onChange = {onShareChange}
             />
-            <Button size={"large"}>
-              Deploy Contract
-            </Button>
-          </form>
+            <button className={styles.btn} onClick={onAddHeir}>Add Heir</button>
+          </div>
         </div>
+        {(() => {
+          if (heirs.length > 0) {
+            return <HeirList props={heirs}/>
+          }
+        })}
         <ToastContainer />
       </div>
     );
@@ -519,6 +576,32 @@ function MakeWill() {
     //get the current user's/ address' contract
     <div>
       <h1>Your will address is {willContract}</h1>
+      <div className={styles.makeWill}>
+        <Input
+          style={{ marginBottom: "10px" }}
+          type="text"
+          name="Heir Name"
+          required={true}
+          placeholder="Heir Name and Address..."
+        />
+        <Button size={"large"}>Add Heir</Button>
+        <Input
+          style={{ marginBottom: "10px" }}
+          type="text"
+          name="Heir Address"
+          required={true}
+          placeholder="Heir Name ..."
+        />
+        <Button size={"large"}>Remove Heir</Button>
+        <Input
+          style={{ marginBottom: "10px" }}
+          type="text"
+          name="Heir Share"
+          required={true}
+          placeholder="Heir Share % (1 to 100) ..."
+        />
+        <Button className={styles.btn} size={"large"}>Set Share</Button>
+      </div>
     </div>
   );
 }
